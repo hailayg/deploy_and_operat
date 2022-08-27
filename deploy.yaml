@@ -1,0 +1,83 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: "changing  file permission!"
+    command:
+       chmod +x suporting_files/deploy.py
+  - name: "running script!"
+    command:
+       suporting_files/deploy.py
+- hosts: webservers
+  gather_facts: yes
+- hosts: HAproxy
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+
+  tasks:
+  
+  - name: "System Update"
+    apt:
+      update_cache: true
+      upgrade: dist
+      cache_valid_time: 7200
+      force_apt_get: true
+
+  - name: "installing NGinx"
+    apt:
+      name: nginx 
+      state: latest
+      force_apt_get: yes
+  - name: "configuring TCP and UDP"
+    template:
+        src: "./nginx.j2"
+        dest: "/etc/nginx/nginx.conf"
+  - name: "restarting nginx"
+    service:
+       name: nginx
+       state: restarted
+- hosts: webservers
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+
+  tasks:
+  - name: "system update"
+    apt:
+      update_cache: true
+      cache_valid_time: 7200
+      force_apt_get: true
+  - name: "installing pip3"
+    apt:
+      name: python3-pip
+  
+  - name: "installing gunicorn"
+    apt:
+      name: gunicorn
+  - name: "inastalling flask"
+    apt:
+      name: python3-flask
+  - name: "installing snmpd"
+    apt:
+      name: snmpd
+      state: latest
+  - name: "configuring snmpd"
+    template:
+      src: "./snmpd.conf"
+      dest: "/etc/snmp/snmpd.conf"
+  - name: "restarting snmpd"
+    service:
+      name: snmpd
+      state: restarted
+      enabled: yes
+  - name: "copying service.py"
+    copy:
+     src: service.py
+     dest: /home/ubuntu/service.py
+     owner: ubuntu
+     mode: 0644
+  - name: "running flask app"
+    shell: gunicorn -w 2 -D -b 0.0.0.0:5000 service:app
+  
