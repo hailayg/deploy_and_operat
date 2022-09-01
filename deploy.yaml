@@ -1,13 +1,14 @@
 ---
-#- hosts: localhost
-# connection: local
-#  gather_facts: false
-#  tasks:
-#    command:
-#       chmod +x deploy.py
-# - name: "running shell script!"
-#    command:
-#       ./deploy.py
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+  - name: "changing permission!"
+    command:
+       chmod +x deploy.py
+  - name: "running shell script!"
+    command:
+       ./deploy.py
 - hosts: webservers
   gather_facts: yes
 - hosts: HAproxy
